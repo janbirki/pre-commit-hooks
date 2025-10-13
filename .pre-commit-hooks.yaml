@@ -1,0 +1,7 @@
+-   id: tc-core-settings
+    name: check if core settings are default
+    description: set the twincat core settings to default.
+    entry: python pre_commit_hooks/remove_core_settings_tsproj.py   
+    language: python
+    stages: [pre-commit, pre-push, manual]
+    minimum_pre_commit_version: 3.2.0
