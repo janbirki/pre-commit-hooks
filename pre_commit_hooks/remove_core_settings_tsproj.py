@@ -81,7 +81,7 @@ def _write_xml(tree: ET.ElementTree, out_path: pathlib.Path) -> None:
 # ----------------------------------------------------------------------
 # Hauptlogik
 # ----------------------------------------------------------------------
-def main() -> None:
+def main() -> int:
     # Basis‑Verzeichnis: das aktuelle Arbeitsverzeichnis, von dem aus das Skript gestartet wird
     base_dir = pathlib.Path.cwd()
 
@@ -101,8 +101,10 @@ def main() -> None:
         if _remove_settings(tree):
             _write_xml(tree, proj_path)   # überschreibt die Originaldatei
             print("   <Settings> entfernt und Datei gespeichert.\n")
+            return 0 # Done
         else:
             print("   Kein <Settings>-Element gefunden - unveraendert.\n")
+            return 1 # Error
 
 
 if __name__ == "__main__":
