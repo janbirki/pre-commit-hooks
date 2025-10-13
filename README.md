@@ -8,8 +8,8 @@ See also: https://github.com/pre-commit/pre-commit
 Add this to your .pre-commit-config.yaml
 
 ```
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0  # Use the ref you want to point at
+-   repo: https://github.com/janbirki/pre-commit-hooks.git
+    rev: v1.0.0  # Use the ref you want to point at
     hooks:
     -   id: trailing-whitespace
     # -   id: ...
