@@ -4,9 +4,9 @@ requires = ["setuptools>=61.0", "wheel"]   # PEP 517‑Build‑Backend
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "precommit-hooks"
+name = "tc-prcmmt-hks"
 version = "1.0.0"
-description = "Reusable pre‑commit hook for TwinCAT projects"
+description = "Reusable pre‑commit hooks for TwinCAT projects"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "Jan B", email = "jan.birkhofer@bluewin.ch"}]

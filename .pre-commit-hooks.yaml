@@ -2,6 +2,6 @@
     name: check if core settings are default
     description: set the twincat core settings to default.
     entry: remove-core-settings
-    language: system
+    language: python
     stages: [pre-commit, pre-push, manual]
     minimum_pre_commit_version: 3.2.0
