@@ -21,3 +21,9 @@ Add this to your .pre-commit-config.yaml
 This hook is changing the core settings to default by deleting the Element "Settings" inside your *.tsproj file
 
 It's needed to run unit tests in a simulated enviromnent, where the actual available cores doesn't matter.
+
+*Before*
+![user defined core settings to run project locally](doc/img/user_defined_core_settings.png)
+
+*After*
+![default core settings twincat system](doc/img/after_running_script.png)
