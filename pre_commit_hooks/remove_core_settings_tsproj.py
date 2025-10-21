@@ -9,28 +9,36 @@ remove_settings_tsproj.py
 
 import sys
 import pathlib
+import subprocess
 import xml.etree.ElementTree as ET
 from typing import List
 
+
 # ----------------------------------------------------------------------
-# helper functions
+# Hilfsfunktionen
 # ----------------------------------------------------------------------
 def _find_tsproj_files(base_dir: pathlib.Path) -> List[pathlib.Path]:
+    """
+    Liefert eine sortierte Liste aller *.tsproj‑Dateien im angegebenen Verzeichnis.
+    Die Suche ist rekursiv, sodass Unterordner ebenfalls beruecksichtigt werden.
+    """
     if not base_dir.is_dir():
-        sys.exit(f"Path '{base_dir}' is not a valid directory.")
+        sys.exit(f"Der Pfad '{base_dir}' ist kein gültiges Verzeichnis.")
     return sorted(base_dir.rglob("*.tsproj"))  # rglob = rekursives Glob
 
 
 def _load_xml(path: pathlib.Path) -> ET.ElementTree:
+    """Lädt die XML‑Datei und gibt das ElementTree‑Objekt zurueck."""
     try:
         return ET.parse(path)
     except ET.ParseError as exc:
-        sys.exit("error during parsing from '{path}': {exc}")
+        sys.exit("Fehler beim Parsen von '{path}': {exc}")
     except OSError as exc:
-        sys.exit("can not open file '{path}': {exc}")
+        sys.exit("Konnte Datei nicht oeffnen '{path}': {exc}")
 
 
 def _remove_settings(tree: ET.ElementTree) -> bool:
+    """Entfernt alle <Settings>-Elemente im Baum."""
     root = tree.getroot()
     removed = False
 
@@ -61,6 +69,7 @@ def _indent(elem: ET.Element, level: int = 0) -> None:
 
 
 def _write_xml(tree: ET.ElementTree, out_path: pathlib.Path) -> None:
+    """Schreibt das (geaenderte) XML mit sauberer Formatierung zurueck."""
     root = tree.getroot()
     if hasattr(ET, "indent"):               # Python ≥3.9
         ET.indent(tree, space="  ")
@@ -69,31 +78,51 @@ def _write_xml(tree: ET.ElementTree, out_path: pathlib.Path) -> None:
 
     tree.write(out_path, encoding="utf-8", xml_declaration=True)
 
+def get_current_branch() -> str:
+    """Return the name of the currently checked‑out branch."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        print(f"Unable to determine current branch: {e}", file=sys.stderr)
+        sys.exit(1)
+
 # ----------------------------------------------------------------------
-# main logic
+# Hauptlogik
 # ----------------------------------------------------------------------
-def main() -> int:
-    # base dir from where the script was started
-    base_dir = pathlib.Path.cwd()
+def main() -> None:
 
-    tsproj_files = _find_tsproj_files(base_dir)
+    branch = get_current_branch()
+    if branch != "main":
+        sys.exit(0)
 
-    if not tsproj_files:
-        sys.exit("Keine *.tsproj‑Dateien im Verzeichnis XYZ gefunden.")
+# ---------- try to commit on main branch => check core config ----------
+        # Basis‑Verzeichnis
+        base_dir = pathlib.Path.cwd()
 
-    for proj_path in tsproj_files:
-        rel = proj_path.relative_to(base_dir)
-        print("Verarbeite: {rel}")
+        tsproj_files = _find_tsproj_files(base_dir)
 
-        tree = _load_xml(proj_path)
+        if not tsproj_files:
+            sys.exit("Keine *.tsproj‑Dateien im Verzeichnis XYZ gefunden.")
 
-        if _remove_settings(tree):
-            _write_xml(tree, proj_path)   # overwrites original file
-            print("   <Settings> deleted and file saved.\n")
-            return 0 # Done
-        else:
-            print("   No <Settings>-Element found - file unchanged.\n")
-            return 1 # Error
+    #    print("*.tsproj‑Datei(en) im Verzeichnis XYZ gefunden.\n")
+
+        for proj_path in tsproj_files:
+            rel = proj_path.relative_to(base_dir)
+            print("Verarbeite: {rel}")
+
+            tree = _load_xml(proj_path)
+
+            if _remove_settings(tree):
+                _write_xml(tree, proj_path)   # überschreibt die Originaldatei
+                print("   <Settings> entfernt und Datei gespeichert.\n")
+            else:
+                print("   Kein <Settings>-Element gefunden - unveraendert.\n")
 
 
 if __name__ == "__main__":
