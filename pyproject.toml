@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tc-prcmmt-hks"
-version = "1.0.1"
+version = "1.0.2"
 description = "Reusable pre‑commit hooks for TwinCAT projects"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [{name = "Jan B", email = "jan.birkhofer@bluewin.ch"}]
 requires-python = ">=3.8"
 # Falls dein Skript zusätzliche Laufzeit‑Abhängigkeiten hat, liste sie hier auf:
@@ -19,3 +19,13 @@ requires-python = ">=3.8"
 # ------------------------------
 [project.scripts]
 remove-core-settings = "pre_commit_hooks.remove_settings_tsproj:main"
+
+# ------------------------------
+# setup tools
+# ------------------------------
+[tool.setuptools]
+include-package-data = true            # use MANIFEST.in in root directory
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pre_commit_hooks*"]       # * = alles darunter (z. B. sub‑modules)
