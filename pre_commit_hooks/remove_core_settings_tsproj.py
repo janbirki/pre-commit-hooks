@@ -2,43 +2,41 @@
 """
 remove_settings_tsproj.py
 
-- Durchsucht das aktuelle Verzeichnis (inkl. Unterordner) nach *.tsproj‑Dateien
-- Entfernt jedes <Settings>-Element (inkl. aller Unterelemente)
-- Schreibt die bereinigte Datei wieder zurück (ueberschreibt das Original)
+- Searches the current directory (including subfolders) for *.tsproj files
+- Removes every <Settings> element (including all subelements)
+- Writes the cleaned file back (overwrites the original)
 """
 
 import sys
 import pathlib
-import subprocess
 import xml.etree.ElementTree as ET
 from typing import List
 
-
 # ----------------------------------------------------------------------
-# Hilfsfunktionen
+# helper functions
 # ----------------------------------------------------------------------
 def _find_tsproj_files(base_dir: pathlib.Path) -> List[pathlib.Path]:
     """
-    Liefert eine sortierte Liste aller *.tsproj‑Dateien im angegebenen Verzeichnis.
-    Die Suche ist rekursiv, sodass Unterordner ebenfalls beruecksichtigt werden.
+    Returns a sorted list of all *.tsproj files in the specified directory.
+    The search is recursive, so subfolders are also included.
     """
     if not base_dir.is_dir():
-        sys.exit(f"Der Pfad '{base_dir}' ist kein gültiges Verzeichnis.")
+        sys.exit(f"Der Pfad '{base_dir}' is not a valid directory.")
     return sorted(base_dir.rglob("*.tsproj"))  # rglob = rekursives Glob
 
 
 def _load_xml(path: pathlib.Path) -> ET.ElementTree:
-    """Lädt die XML‑Datei und gibt das ElementTree‑Objekt zurueck."""
+    """Loads the XML file and returns the ElementTree object."""
     try:
         return ET.parse(path)
     except ET.ParseError as exc:
-        sys.exit("Fehler beim Parsen von '{path}': {exc}")
+        sys.exit("Error parsing from '{path}': {exc}")
     except OSError as exc:
-        sys.exit("Konnte Datei nicht oeffnen '{path}': {exc}")
+        sys.exit("Could not open file '{path}': {exc}")
 
 
 def _remove_settings(tree: ET.ElementTree) -> bool:
-    """Entfernt alle <Settings>-Elemente im Baum."""
+    """Remove all <Settings> elements in the tree."""
     root = tree.getroot()
     removed = False
 
@@ -52,8 +50,8 @@ def _remove_settings(tree: ET.ElementTree) -> bool:
 
 def _indent(elem: ET.Element, level: int = 0) -> None:
     """
-    Rekursive Einrückung (Fallback für Python < 3.9).
-    Verhindert überflüssige Leerzeilen.
+    Recursive indentation (fallback for Python < 3.9).
+    Prevents unnecessary blank lines.
     """
     i = "\n" + level * "  "
     if len(elem):
@@ -69,7 +67,7 @@ def _indent(elem: ET.Element, level: int = 0) -> None:
 
 
 def _write_xml(tree: ET.ElementTree, out_path: pathlib.Path) -> None:
-    """Schreibt das (geaenderte) XML mit sauberer Formatierung zurueck."""
+    """Write back the (modified) XML with clean formatting."""
     root = tree.getroot()
     if hasattr(ET, "indent"):               # Python ≥3.9
         ET.indent(tree, space="  ")
@@ -78,51 +76,30 @@ def _write_xml(tree: ET.ElementTree, out_path: pathlib.Path) -> None:
 
     tree.write(out_path, encoding="utf-8", xml_declaration=True)
 
-def get_current_branch() -> str:
-    """Return the name of the currently checked‑out branch."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return result.stdout.strip()
-    except subprocess.CalledProcessError as e:
-        print(f"Unable to determine current branch: {e}", file=sys.stderr)
-        sys.exit(1)
 
 # ----------------------------------------------------------------------
-# Hauptlogik
+# main logic
 # ----------------------------------------------------------------------
 def main() -> None:
+    # Base directory: the current working directory from which the script is started
+    base_dir = pathlib.Path.cwd()
 
-    branch = get_current_branch()
-    if branch != "main":
-        sys.exit(0)
+    tsproj_files = _find_tsproj_files(base_dir)
 
-# ---------- try to commit on main branch => check core config ----------
-        # Basis‑Verzeichnis
-        base_dir = pathlib.Path.cwd()
+    if not tsproj_files:
+        sys.exit("No *.tsproj files found in the XYZ directory.")
 
-        tsproj_files = _find_tsproj_files(base_dir)
+    for proj_path in tsproj_files:
+        rel = proj_path.relative_to(base_dir)
+        print("Process: {rel}")
 
-        if not tsproj_files:
-            sys.exit("Keine *.tsproj‑Dateien im Verzeichnis XYZ gefunden.")
+        tree = _load_xml(proj_path)
 
-    #    print("*.tsproj‑Datei(en) im Verzeichnis XYZ gefunden.\n")
-
-        for proj_path in tsproj_files:
-            rel = proj_path.relative_to(base_dir)
-            print("Verarbeite: {rel}")
-
-            tree = _load_xml(proj_path)
-
-            if _remove_settings(tree):
-                _write_xml(tree, proj_path)   # überschreibt die Originaldatei
-                print("   <Settings> entfernt und Datei gespeichert.\n")
-            else:
-                print("   Kein <Settings>-Element gefunden - unveraendert.\n")
+        if _remove_settings(tree):
+            _write_xml(tree, proj_path)   # overwrites the original file
+            print("   <Settings> removed and file saved.\n")
+        else:
+            print("   No <Settings> element found - unchanged.\n")
 
 
 if __name__ == "__main__":
