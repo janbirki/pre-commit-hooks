@@ -102,5 +102,7 @@ def main() -> None:
             print("   No <Settings> element found - unchanged.\n")
 
 
+#if __name__ == "__main__":
+#    main()
 if __name__ == "__main__":
-    main()
+    exit(main())
